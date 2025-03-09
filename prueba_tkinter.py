@@ -1,8 +1,8 @@
 import tkinter as tk
-from tkinter import ttk
 from tkinter import messagebox
 from cliente import Cliente
 from handledb import DB
+from venta import Venta
 
 
 
@@ -88,7 +88,7 @@ class Client(Form):
         self.feedback = tk.StringVar()
 
         
-        def validar_cliente():
+        def validar_cliente(bol):
             result = DB.getOneBy("clientes", "id", self.id.get())
             if result != None and self.id.get() == result["id"]:
                 name, last_name = result["name"].split(" ",1)
@@ -97,10 +97,12 @@ class Client(Form):
                 self.feedback.set("")
                 return False
             else:
+                if bol:
+                    messagebox.showinfo("Cliente", "Cliente no registrado")
                 return True
         
         def registrar():
-            if validar_cliente():
+            if validar_cliente(False):
                 if self.id.get() != "" and self.last_name.get() != "" and self.name.get() != "":
                         data = {
                             "id": self.id.get(),
@@ -114,11 +116,23 @@ class Client(Form):
                     messagebox.showinfo("Cliente", "Debe llenar todos los campos")
             else:
                 messagebox.showinfo("Cliente", "Cliente ya registrado")
-
+                
+        def showSaleForm():
+            if self.id.get() != "" and self.last_name.get() != "" and self.name.get() != "":
+                if not validar_cliente(True):
+                    self.sale_window = Sale(self.main_window, self)
+                    self.sale_window.show()
+            else:
+                if self.id.get() != "":
+                    messagebox.showinfo("Cliente", "Consulte el cliente")
+                else:
+                    messagebox.showinfo("Cliente", "Ingrese la V- del cliente")
+                
         fr1 = tk.Frame(self.toplevel); fr1.pack(pady=10)
         fr2 = tk.Frame(self.toplevel); fr2.pack(pady=5)
         fr3 = tk.Frame(self.toplevel); fr3.pack(pady=5)
         fr4 = tk.Frame(self.toplevel); fr4.pack(pady=25)
+        fr5 = tk.Frame(self.toplevel); fr5.pack(pady=10)
         
 
         
@@ -127,8 +141,7 @@ class Client(Form):
         tk.Label(fr1, text="Cedula Del Cliente: ").pack(side="left")
         tk.Entry(fr1, textvariable=self.id).pack(side="left", padx=6)
         
-        tk.Button(fr1, text="Ver Cliente", relief="groove", font=("Inter", 9), command = validar_cliente).pack(side="left")
-      
+        tk.Button(fr1, text="Ver Cliente", relief="groove", font=("Inter", 9), command = lambda:validar_cliente(True)).pack(side="left")
 
         
         Widget.InputGrid(fr2, "Nombre del cliente:", self.name, [0, 0], width=16)
@@ -139,6 +152,7 @@ class Client(Form):
         entryfeedback.grid(column=0, row=3, ipady = 10)
         tk.Button(fr4, foreground=COLOR1, text="Añadir Cliente", relief="groove", width=20, height=2, font=("Inter Bold", 10), command=registrar
         ).grid(column=0, row=0)
+        tk.Button(fr5, foreground=COLOR1, text="Ir al carrito", relief="groove", width=20, height=2, font=("Inter Bold", 10), command=showSaleForm).grid(column=0, row=0)
 """
 Tiene:
 Fecha = -----> String
@@ -156,9 +170,16 @@ class Sale(Form):
 
         # Lista de productos comprados
         self.products_list = []
-
+        self.id = client.id
         self.name = client.name
         self.last_name = client.last_name
+        
+        def registrar_venta():
+            if self.pay.get() != "" and self.products_list != []:
+                
+                messagebox.showinfo("Ventas", "Venta registrada")
+            else:
+                messagebox.showerror("Error", "Debe llenar todos los campos")
         
         fr1 = tk.Frame(self.toplevel); fr1.pack(pady=10)
         fr2 = tk.Frame(self.toplevel); fr2.pack(pady=5)
@@ -193,7 +214,7 @@ class Sale(Form):
         self.products_display = tk.Text(self.toplevel, height=10, width=40, state="disabled")
         self.products_display.pack(pady=10)
         fr_facturar = tk.Frame(self.toplevel); fr_facturar.pack(pady=25)
-        tk.Button(fr_facturar, foreground=COLOR1, text="Facturar", relief="groove", width=20, height=2, font=("Inter Bold", 10), command=None
+        tk.Button(fr_facturar, foreground=COLOR1, text="Facturar", relief="groove", width=20, height=2, font=("Inter Bold", 10), command=registrar_venta
         ).grid(column=0, row=0)
         
     def add_product(self):
@@ -217,7 +238,6 @@ class Sale(Form):
             print("⚠️ Error: Ingresa un producto y una cantidad válida.") 
         
         
-       
         
         
         
@@ -234,9 +254,9 @@ if __name__ == "__main__":
     Client.show()
    
 
-    # Crear una instancia de Sale con el cliente
+   
     venta = Sale(ventana, Client)
-    venta.show()
+    #venta.show()
     ventana.mainloop()
 
 
